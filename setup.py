@@ -8,8 +8,7 @@ setup(
   author = 'Solo',                  
   author_email = 'support@solomotorcontrollers.com',      
   url = 'https://github.com/Solo-FL/SoloPy',   
-  download_url = 'https://github.com/Solo-FL/SoloPy/archive/refs/tags/v3.1.3.tar.gz',    
-  keywords = ['Solo Motor controllers', 'Solo', 'SoloPy'],   
+  keywords = ['Solo Motor controllers', 'Solo', 'SoloPy'],
   install_requires=[           
           'pyserial==3.5',
           'python-can==4.2.2',

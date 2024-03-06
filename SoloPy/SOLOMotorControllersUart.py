@@ -28,7 +28,8 @@ class SoloMotorControllerUart(implements(SOLOMotorControllers)):
             address=0,
             baudrate=UART_BAUD_RATE.RATE_937500,
             timeout=3,
-            loggerLevel=logging.INFO):
+            loggerLevel=logging.INFO,
+            ensure_write_backoff_s = 0.001):
 
         # logger init
         logging.shutdown()
@@ -50,6 +51,7 @@ class SoloMotorControllerUart(implements(SOLOMotorControllers)):
                 self._baudrate = 115200
         self._port = port
         self._timeout = timeout
+        self._ensure_write_backoff_s = ensure_write_backoff_s
         self._ser = None
         self.serial_open()
         # TODO try solving serial error
@@ -73,45 +75,43 @@ class SoloMotorControllerUart(implements(SOLOMotorControllers)):
             hex(ConstantUart.CRC), hex(ConstantUart.ENDING)])
         self._logger.debug(messageLog)
 
-        for attempts in range(5):
-            try:
-                self._ser.write(_cmd)
+        try:
+            self._ser.write(_cmd)
 
-                # Time to ensure the writing, reducing it can make the comunication instable
-                time.sleep(0.1)
+            # Time to ensure the writing, reducing it can make the comunication instable
+            # time.sleep(0.1)
+            # Reduced time to ensure writing, tested on winch bench setup
+            time.sleep(self._ensure_write_backoff_s)
 
-                # read up to ten bytes (timeout)
-                while self._ser.in_waiting> 0:
-                    _readPacket = self._ser.read(10)
+            # read up to ten bytes (timeout)
+            while self._ser.in_waiting> 0:
+                _readPacket = self._ser.read(10)
 
-                    messageLog = "READ: " + \
-                        str([hex(i) for i in _readPacket]) + \
-                        " size: " + str(len(_readPacket))
-                    self._logger.debug(messageLog)
+                messageLog = "READ: " + \
+                    str([hex(i) for i in _readPacket]) + \
+                    " size: " + str(len(_readPacket))
+                self._logger.debug(messageLog)
 
-                if (len(_readPacket) == 0):
-                    self._ser.flush()
+            if (len(_readPacket) == 0):
+                self._ser.flush()
 
-                if (_readPacket and
-                        _readPacket[0] == _cmd[0] and
-                        _readPacket[1] == _cmd[1] and
-                        (_readPacket[2] == _cmd[2] or _cmd[2] == 0xFF) and
-                        _readPacket[8] == _cmd[8] and
-                        _readPacket[9] == _cmd[9]):
-                    if (_readPacket[3] == _cmd[3]):
-                        cmd[0] = _readPacket[2]
-                        cmd[1] = _readPacket[3]
-                        cmd[2] = _readPacket[4]
-                        cmd[3] = _readPacket[5]
-                        cmd[4] = _readPacket[6]
-                        cmd[5] = _readPacket[7]
-                        return True, ERROR.NO_ERROR_DETECTED
-                    else:
-                        continue
-            except Exception as e:
-                self._logger.debug('__exec_cmd Exception')
-                self._logger.debug(e, exc_info=True)
-            time.sleep(0.1) 
+            if (_readPacket and
+                    _readPacket[0] == _cmd[0] and
+                    _readPacket[1] == _cmd[1] and
+                    (_readPacket[2] == _cmd[2] or _cmd[2] == 0xFF) and
+                    _readPacket[8] == _cmd[8] and
+                    _readPacket[9] == _cmd[9]):
+                if (_readPacket[3] == _cmd[3]):
+                    cmd[0] = _readPacket[2]
+                    cmd[1] = _readPacket[3]
+                    cmd[2] = _readPacket[4]
+                    cmd[3] = _readPacket[5]
+                    cmd[4] = _readPacket[6]
+                    cmd[5] = _readPacket[7]
+                    return True, ERROR.NO_ERROR_DETECTED
+        except Exception as e:
+            self._logger.debug('__exec_cmd Exception')
+            self._logger.debug(e, exc_info=True)
 
         cmd[0] = 0xEE
         cmd[1] = 0xEE

@@ -1,6 +1,14 @@
 |License|
 
 ==================================================
+Aerit SoloPy
+==================================================
+
+Aerit SoloPy is branched out from SoloPy `v3.1.3 <https://github.com/Solo-FL/SoloPy/releases/tag/V3.1.3>`__
+to allow changes to the SoloPy library necessary for integration with the Aerit software stack.
+
+
+==================================================
 SoloPy
 ==================================================
 
